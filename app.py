@@ -26,9 +26,9 @@ app.add_middleware(
 )
 
 # -----------------------------
-# Model Loader (Supports both)
+# Model Loader
 # -----------------------------
-MODEL_TYPE = os.getenv("MODEL_TYPE", "cmd")  # cmd / jupyter
+MODEL_TYPE = os.getenv("MODEL_TYPE", "cmd")
 
 if MODEL_TYPE == "jupyter":
     model_path = "models/fraud_model_jupyter.pkl"
@@ -88,17 +88,18 @@ def behavior_risk(upi_id):
 # -----------------------------
 def risk_level(score):
     if score < 0.3:
-        return "LOW RISK"
+        return "LOW"
     elif score < 0.6:
-        return "MEDIUM RISK"
+        return "MEDIUM"
     else:
-        return "HIGH RISK"
+        return "HIGH"
 
 
 # -----------------------------
-# Quantum Risk (Safe)
+# Quantum Risk
 # -----------------------------
 def quantum_risk_score(classical_risk):
+
     if not quantum_available:
         return classical_risk * 0.85
 
@@ -112,6 +113,7 @@ def quantum_risk_score(classical_risk):
         counts = result.get_counts()
 
         return counts.get("1", 0) / 1000
+
     except:
         return classical_risk * 0.85
 
@@ -130,7 +132,6 @@ def fraud_detection(transaction):
         transaction["device_trust_score"]
     ]]
 
-    # ML prediction (safe)
     if model:
         ml_prob = model.predict_proba(features)[0][1]
     else:
@@ -145,10 +146,13 @@ def fraud_detection(transaction):
 
     if transaction["receiver_report_count"] > 5:
         reasons.append("Receiver reported multiple times")
+
     if transaction["receiver_age_days"] < 10:
         reasons.append("New account")
+
     if transaction["amount"] > 5000:
         reasons.append("High transaction amount")
+
     if behavior > 0.7:
         reasons.append("UPI flagged in fraud intelligence")
 
@@ -157,13 +161,13 @@ def fraud_detection(transaction):
     elif final_score < 0.7:
         decision = "WARNING"
     else:
-        decision = "HIGH RISK FRAUD"
+        decision = "FRAUD"
 
     return {
         "ml_risk": float(ml_prob),
         "quantum_risk": float(quantum_prob),
         "behavior_risk": float(behavior),
-        "final_score": float(final_score),
+        "risk_score": float(final_score),
         "risk_level": risk_level(final_score),
         "decision": decision,
         "reasons": reasons
@@ -184,46 +188,43 @@ def fraud_stats():
         "total_transactions": 1240,
         "fraud_detected": 87,
         "warnings": 210,
-        "safe": 943
+        "safe_payments": 943
     }
 
 
-@app.post("/flagged_upi")
-def check_flagged(data: dict):
-    upi_id = data.get("upi_id")
-
-    if upi_id in BLACKLISTED_UPI:
-        return {
-            "upi_id": upi_id,
-            "status": "FRAUD",
-            "reason": "Blacklisted UPI",
-            "reports": UPI_REPORTS.get(upi_id, 0)
-        }
-    return {
-        "upi_id": upi_id,
-        "status": "SAFE",
-        "reports": 0
-    }
+@app.get("/flagged_upi")
+def flagged_upi():
+    return [
+        {"upi_id": upi, "reports": UPI_REPORTS.get(upi, 0)}
+        for upi in BLACKLISTED_UPI
+    ]
 
 
 @app.get("/risk_heatmap")
 def risk_heatmap():
     return [
-        {"region": "Delhi", "risk_score": 0.82},
-        {"region": "Mumbai", "risk_score": 0.71},
-        {"region": "Bangalore", "risk_score": 0.35},
-        {"region": "Hyderabad", "risk_score": 0.48},
-        {"region": "Kolkata", "risk_score": 0.66}
+        {"region": "Delhi", "risk_level": "HIGH"},
+        {"region": "Mumbai", "risk_level": "HIGH"},
+        {"region": "Bangalore", "risk_level": "LOW"},
+        {"region": "Hyderabad", "risk_level": "MEDIUM"},
+        {"region": "Kolkata", "risk_level": "HIGH"}
     ]
 
 
+# -----------------------------
+# Detect Transaction
+# -----------------------------
 @app.post("/detect")
 def detect_fraud(transaction: dict):
     return fraud_detection(transaction)
 
 
+# -----------------------------
+# Scan QR
+# -----------------------------
 @app.post("/scan_qr")
 def scan_qr(data: dict):
+
     parsed = parse_qs(data["qr_data"].split("?")[1])
 
     upi_id = parsed.get("pa", ["unknown"])[0]
@@ -239,14 +240,23 @@ def scan_qr(data: dict):
         "upi_id": upi_id
     }
 
-    return {"upi_id": upi_id, "amount": amount, **fraud_detection(transaction)}
+    return {
+        "upi_id": upi_id,
+        "amount": amount,
+        **fraud_detection(transaction)
+    }
 
 
+# -----------------------------
+# Check Payment Link
+# -----------------------------
 @app.post("/check_link")
 def check_link(data: dict):
 
-    upi_id = extract_upi(data.get("payment_link"))
-    amount = extract_amount(data.get("payment_link"))
+    link = data.get("link")
+
+    upi_id = extract_upi(link)
+    amount = extract_amount(link)
 
     transaction = {
         "amount": amount,
@@ -258,23 +268,32 @@ def check_link(data: dict):
         "upi_id": upi_id
     }
 
-    return {"upi_id": upi_id, "amount": amount, **fraud_detection(transaction)}
+    return {
+        "upi_id": upi_id,
+        "amount": amount,
+        **fraud_detection(transaction)
+    }
 
 
+# -----------------------------
+# Website Check
+# -----------------------------
 @app.post("/check_website")
 def check_website(data: dict):
 
     suspicious_sites = ["fakepay.com", "scamupi.net", "fraudpay.org"]
 
-    if data["website"] in suspicious_sites:
+    website = data.get("domain")
+
+    if website in suspicious_sites:
         return {
-            "website": data["website"],
+            "website": website,
             "risk": "HIGH",
             "message": "Website flagged as suspicious"
         }
 
     return {
-        "website": data["website"],
+        "website": website,
         "risk": "LOW",
         "message": "Website appears safe"
     }
