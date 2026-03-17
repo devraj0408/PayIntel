@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 10% 3.9%;
+
+    --secondary: 240 5% 15%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 5% 15%;
+    --muted-foreground: 215 16% 57%;
+
+    --accent: 240 5% 15%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5% 15%;
+    --input: 240 5% 15%;
+    --ring: 215 16% 57%;
+
+    --radius: 0.75rem;
+
+    --risk-high: 0 84% 60%;
+    --risk-medium: 38 92% 50%;
+    --risk-low: 142 70% 45%;
+
+    --surface-elevated: 240 10% 8%;
+
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 215 16% 57%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 240 10% 3.9%;
+    --sidebar-accent: 240 5% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 5% 15%;
+    --sidebar-ring: 215 16% 57%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.04em;
+    @apply font-semibold;
+  }
+
+  .font-mono {
+    font-family: 'Geist Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+}
+
+@layer components {
+  .label-caps {
+    @apply text-[11px] uppercase tracking-[0.1em] font-bold text-muted-foreground;
+  }
+
+  .card-surface {
+    @apply bg-card rounded-xl border p-6;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.5);
+  }
+
+  .risk-badge-high {
+    @apply bg-risk-high/15 text-risk-high border border-risk-high/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider;
+  }
+
+  .risk-badge-medium {
+    @apply bg-risk-medium/15 text-risk-medium border border-risk-medium/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider;
+  }
+
+  .risk-badge-low {
+    @apply bg-risk-low/15 text-risk-low border border-risk-low/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider;
+  }
+
+  .scan-line {
+    @apply absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-risk-high/60 to-transparent;
+    animation: scanMove 2s ease-in-out infinite;
+  }
+}
+
+@keyframes scanMove {
+  0%, 100% { top: 10%; }
+  50% { top: 90%; }
+}
