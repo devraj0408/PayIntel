@@ -1,10 +1,11 @@
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://payintel.onrender.com";
 
 async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${endpoint}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
+
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
@@ -45,16 +46,28 @@ export interface HeatmapEntry {
 
 export const api = {
   detect: (data: DetectRequest) =>
-    apiCall<DetectResponse>("/detect", { method: "POST", body: JSON.stringify(data) }),
+    apiCall<DetectResponse>("/detect", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   scanQr: (qr_data: string) =>
-    apiCall<DetectResponse>("/scan_qr", { method: "POST", body: JSON.stringify({ qr_data }) }),
+    apiCall<DetectResponse>("/scan_qr", {
+      method: "POST",
+      body: JSON.stringify({ qr_data }),
+    }),
 
   checkLink: (link: string) =>
-    apiCall<DetectResponse>("/check_link", { method: "POST", body: JSON.stringify({ link }) }),
+    apiCall<DetectResponse>("/check_link", {
+      method: "POST",
+      body: JSON.stringify({ link }),
+    }),
 
   checkWebsite: (domain: string) =>
-    apiCall<any>("/check_website", { method: "POST", body: JSON.stringify({ domain }) }),
+    apiCall<any>("/check_website", {
+      method: "POST",
+      body: JSON.stringify({ domain }),
+    }),
 
   fraudStats: () => apiCall<FraudStats>("/fraud_stats"),
 
